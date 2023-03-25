@@ -1,0 +1,116 @@
+name: ci
+
+on:
+  push:
+    branches: [master, development, 'refactor/unit_tests**', 'epic/**']
+  pull_request:
+    branches: [master, development, 'refactor/unit_tests**', 'epic/**']
+    types: [ready_for_review, opened, synchronize, reopened]
+
+jobs:
+  build_hummingbot:
+    name: build + stable tests
+    if: github.event.pull_request.draft == false
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+    
+      # Use cache's hashFiles function to check for changes in core code
+      - name: Check for code changes
+        id: program-changes
+        uses: actions/cache@v2
+        env:
+          # Increase this value to manually reset cache if program files have not changed
+          CACHE_NUMBER: 0
+        with:
+          path: README.md # placeholder file
+          key: ${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+      
+      # Check for setup/environmnet-linux.yml changes
+      - name: Cache conda dependencies
+        id: conda-dependencies
+        uses: actions/cache@v2
+        env:
+          # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
+          CONDA_CACHE_NUMBER: 0
+        with:
+          path: |
+            /home/runner/conda_pkgs_dir/
+            /usr/share/miniconda/envs
+          key: ${{ runner.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
+
+      # Install environment and Hummingbot
+      - name: Install environment and Hummingbot
+        uses: ./.github/actions/install_env_and_hb
+        with:
+          program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
+          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
+
+      - name: Create folder for Hummingbot Professional repo
+        shell: bash
+        run: |
+          rm -Rf full_repo
+          mkdir -p full_repo
+  
+      - name: Get branch name (push)
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Get branch name (pull request)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
+
+      - name: Checkout Hummingbot Professional repo
+        uses: actions/checkout@v3
+        with:
+          repository: CoinAlpha/hummingbot-professional
+          ref: ${{env.BRANCH_NAME}}
+          token: ${{secrets.PRIME_PTA}}
+          path: full_repo
+
+      - name: Install Hummingbot library
+        shell: bash
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate hummingbot-professional
+          python3 -m pip install -f full_repo/library hummingbot
+
+      # Compile and run tests if code has changed
+      - name: Run pre-commit hooks on diff
+        shell: bash
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate hummingbot-professional
+          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
+
+      - name: Run stable tests and calculate coverage
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate hummingbot-professional
+          make test
+      - name: Check and report global coverage
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate hummingbot-professional
+          make report_coverage
+      - name: Validate coverage for the changes
+        if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
+        shell: bash
+        run: |
+          source $CONDA/etc/profile.d/conda.sh
+          conda activate hummingbot-professional
+          git fetch --all -q
+          git checkout -b $GITHUB_SHA
+          coverage xml
+          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=90 coverage.xml

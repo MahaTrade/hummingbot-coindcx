@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/CoinAlpha/hb-coindcx-connector.git
+	branch = master
+	commit = 8df2f62a19e3860fff25a644ea0768d108e569e7
+	parent = e3fdf7772c4edb5d67520419fe00917407d5c79c
+	method = merge
+	cmdver = 0.4.3

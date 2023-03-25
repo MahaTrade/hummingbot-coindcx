@@ -1,0 +1,16 @@
+[run]
+source_pkgs = coindcx_src
+dynamic_context = test_function
+branch = true
+
+[report]
+fail_under = 85
+precision = 2
+skip_empty = true
+
+[html]
+directory = coverage_html_report
+show_contexts = true
+
+[xml]
+output = coverage.xml
