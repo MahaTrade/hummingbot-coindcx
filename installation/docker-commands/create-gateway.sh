@@ -328,7 +328,7 @@ echo "ℹ️  Confirm below if the instance and its folders are correct:"
 echo
 
 printf "%30s %5s\n" "Gateway instance name:" "$GATEWAY_INSTANCE_NAME"
-printf "%30s %5s\n" "Version:" "coinalpha/gateway-api:$GATEWAY_TAG"
+printf "%30s %5s\n" "Version:" "coindcx/gateway-api:$GATEWAY_TAG"
 echo
 printf "%30s %5s\n" "Hummingbot Instance ID:" "$HUMMINGBOT_INSTANCE_ID"
 printf "%30s %5s\n" "Ethereum Chain:" "$ETHEREUM_CHAIN"
@@ -442,7 +442,7 @@ create_instance () {
  --mount "type=bind,source=$CERT_PATH,destination=/usr/src/app/certs/" \
  --mount "type=bind,source=$LOG_PATH,destination=/usr/src/app/logs/" \
  --mount "type=bind,source=$FOLDER/hummingbot_conf/,destination=/usr/src/app/conf/" \
- coinalpha/gateway-api:$GATEWAY_TAG
+ coindcx/gateway-api:$GATEWAY_TAG
 }
 
 prompt_proceed

@@ -25,14 +25,14 @@ list_instances () {
  echo
  echo "List of all docker containers using the \"$TAG\" version:"
  echo
- docker ps -a --filter ancestor=coinalpha/gateway-api:$TAG
+ docker ps -a --filter ancestor=coindcx/gateway-api:$TAG
  echo
 }
 
 
 # Execute docker commands
 execute_docker () {
- 
+
 
  if [ ! "$INSTANCE_NAME" == "" ]
  then
@@ -56,22 +56,22 @@ execute_docker () {
 
  # 2) Delete old image
  echo
- read -p "   Delete current docker image coinalpha/gateway-api:$TAG? [Y/N] >>> " DELETE_IMAGE
+ read -p "   Delete current docker image coindcx/gateway-api:$TAG? [Y/N] >>> " DELETE_IMAGE
  if [[ "$DELETE_IMAGE" == "Y" || "$DELETE_IMAGE" == "y" ]]
  then
   echo
-  echo "Deleting old image: coinalpha/gateway-api:$TAG"
-  docker image rm coinalpha/gateway-api:$TAG
+  echo "Deleting old image: coindcx/gateway-api:$TAG"
+  docker image rm coindcx/gateway-api:$TAG
   echo
  fi
 
- 
+
  #3 ) Pull docker image
  echo
- read -p "   Pulling docker image coinalpha/gateway-api:$TAG [Y/N] >>> " PULL_IMAGE
+ read -p "   Pulling docker image coindcx/gateway-api:$TAG [Y/N] >>> " PULL_IMAGE
  if [[ "$PULL_IMAGE" == "Y" || "$PULL_IMAGE" == "y" ]]
  then
-  docker pull coinalpha/gateway-api:$TAG
+  docker pull coindcx/gateway-api:$TAG
   echo
  fi
 
@@ -98,7 +98,7 @@ list_instances
 read -p "   Enter a name for your new Gateway instance to update >>> " INSTANCE_NAME
 
 execute_docker
-# 
+#
 
 echo "✅  Update complete!"
 echo
